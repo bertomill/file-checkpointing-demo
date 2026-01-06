@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Checkpointing — Interactive Demo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Persistent Sidebar -->
+  <aside class="docs-sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">C</div>
+      <span class="sidebar-title">Claude Docs</span>
+      <span class="sidebar-badge">SDK</span>
+    </div>
+    <div class="sidebar-image">
+      <img src="sidebar.png" alt="Agent SDK Documentation">
+    </div>
+    <div class="sidebar-footer">
+      <a href="https://docs.anthropic.com" target="_blank">docs.anthropic.com</a>
+    </div>
+  </aside>
+
+  <div class="slide slide-demo">
+    <!-- Navigation -->
+    <nav class="nav">
+      <div class="nav-dots">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot active"></span>
+        <span class="dot"></span>
+      </div>
+      <span class="nav-label">3 / 4</span>
+    </nav>
+
+    <!-- Back Button -->
+    <a href="page2.html" class="back-btn">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </a>
+
+    <!-- Main Content -->
+    <div class="content demo-content">
+      <div class="demo-header">
+        <div class="badge">Live Demo</div>
+        <h1><span class="gradient-text">Mountain Gear Co</span></h1>
+        <p class="tagline">Black Friday Sale — Pricing Update</p>
+      </div>
+
+      <!-- Flow Diagram -->
+      <div class="flow-diagram">
+        <div class="flow-step" id="step1">
+          <div class="flow-icon">📄</div>
+          <div class="flow-title">Original</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" id="step2">
+          <div class="flow-icon">🤖</div>
+          <div class="flow-title">Claude Edits</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" id="step3">
+          <div class="flow-icon">✅</div>
+          <div class="flow-title">Review</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" id="step4">
+          <div class="flow-icon">↩️</div>
+          <div class="flow-title">Rewind</div>
+        </div>
+      </div>
+
+      <!-- Demo Area -->
+      <div class="demo-area">
+        <!-- Config Display -->
+        <div class="config-panel">
+          <div class="panel-header">
+            <span class="file-name">pricing_config.json</span>
+            <span class="status-badge" id="statusBadge">Original</span>
+          </div>
+          <div class="config-content" id="configDisplay">
+            <!-- Products will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="control-panel">
+          <div class="control-title">Simulation Controls</div>
+
+          <button class="control-btn primary" id="applyBtn" onclick="applySale()">
+            <span class="btn-icon">🤖</span>
+            Apply Black Friday Sale
+          </button>
+
+          <button class="control-btn danger" id="rewindBtn" onclick="rewindChanges()" disabled>
+            <span class="btn-icon">↩️</span>
+            Rewind to Checkpoint
+          </button>
+
+          <button class="control-btn secondary" id="resetBtn" onclick="resetDemo()">
+            <span class="btn-icon">🔄</span>
+            Reset Demo
+          </button>
+
+          <div class="checkpoint-info" id="checkpointInfo">
+            <div class="checkpoint-label">Checkpoint Status</div>
+            <div class="checkpoint-value" id="checkpointValue">No checkpoint saved</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="timeline-panel">
+        <div class="timeline-title">Event Log</div>
+        <div class="timeline-events" id="timeline">
+          <div class="timeline-event">
+            <span class="event-time">00:00</span>
+            <span class="event-dot"></span>
+            <span class="event-text">Demo initialized with original pricing</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Q&A Section -->
+      <div class="qa-section">
+        <div class="qa-title">Common Questions</div>
+        <div class="qa-item">
+          <div class="qa-question">
+            <span class="qa-icon">Q</span>
+            <span>Do I need to manually create a checkpoint after every step?</span>
+          </div>
+          <div class="qa-answer">
+            <span class="qa-icon answer">A</span>
+            <div class="qa-answer-text">
+              <strong>No! The SDK handles it automatically.</strong>
+              <p>When you enable <code>enable_file_checkpointing=True</code>, the SDK automatically creates backups before any file modification. Each user message in the response stream comes with a UUID — that's your checkpoint ID. You just need to capture it:</p>
+              <pre><code>if isinstance(message, UserMessage) and message.uuid:
+    checkpoint_id = message.uuid  # Save this!</code></pre>
+              <p>Think of it like auto-save in a video game. The system is constantly saving — you just decide when to load a previous save.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-question">
+            <span class="qa-icon">Q</span>
+            <span>What happens if I don't use checkpointing?</span>
+          </div>
+          <div class="qa-answer">
+            <span class="qa-icon answer">A</span>
+            <div class="qa-answer-text">
+              <strong>You're on your own for recovery.</strong>
+              <p>Without checkpointing, if Claude makes unwanted changes, you'd have to:</p>
+              <ul class="qa-list">
+                <li><span class="qa-bullet">•</span> Manually undo changes in your editor (Cmd+Z... a lot)</li>
+                <li><span class="qa-bullet">•</span> Use Git to restore files (<code>git checkout</code>, <code>git stash</code>)</li>
+                <li><span class="qa-bullet">•</span> Keep manual backups before every AI operation</li>
+                <li><span class="qa-bullet">•</span> Hope you remember what the original file looked like</li>
+              </ul>
+              <p>Checkpointing gives you a <strong>one-line safety net</strong> — no Git gymnastics, no manual backups, no stress.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="qa-item">
+          <div class="qa-question">
+            <span class="qa-icon">Q</span>
+            <span>Why can't I just hit Cmd+Z on my laptop?</span>
+          </div>
+          <div class="qa-answer">
+            <span class="qa-icon answer">A</span>
+            <div class="qa-answer-text">
+              <strong>Cmd+Z doesn't scale.</strong>
+              <p>Here's the problem:</p>
+              <ul class="qa-list">
+                <li><span class="qa-bullet">•</span> <strong>One file at a time</strong> — Cmd+Z only works in the file you're currently viewing. If Claude edited 5 files, you need to open each one and undo separately.</li>
+                <li><span class="qa-bullet">•</span> <strong>History gets lost</strong> — Close a file or restart your editor? Undo history is gone.</li>
+                <li><span class="qa-bullet">•</span> <strong>Can't undo file creation</strong> — If Claude created new files, Cmd+Z won't delete them.</li>
+                <li><span class="qa-bullet">•</span> <strong>No partial rewind</strong> — You can't say "undo the last 3 operations but keep the first 2."</li>
+              </ul>
+              <p>Checkpointing gives you <strong>one command that restores everything</strong> — all files, all changes, instantly. It's like Cmd+Z for your entire project.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Code Preview -->
+      <div class="code-section-full">
+        <div class="code-section-title">What It Looks Like in Code</div>
+
+        <div class="code-steps">
+          <!-- Step 1 -->
+          <div class="code-step">
+            <div class="code-step-header">
+              <span class="code-step-number">1</span>
+              <span class="code-step-title">Enable Checkpointing</span>
+            </div>
+            <div class="code-panel">
+              <div class="code-header">
+                <div class="code-dots">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                </div>
+                <span class="code-title">Configuration</span>
+              </div>
+              <pre class="code-content"><code><span class="variable">options</span> = <span class="function">ClaudeAgentOptions</span>(
+    <span class="variable">enable_file_checkpointing</span>=<span class="keyword">True</span>,
+    <span class="variable">permission_mode</span>=<span class="string">"acceptEdits"</span>,
+)</code></pre>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="code-step">
+            <div class="code-step-header">
+              <span class="code-step-number">2</span>
+              <span class="code-step-title">Capture Checkpoint ID</span>
+            </div>
+            <div class="code-panel">
+              <div class="code-header">
+                <div class="code-dots">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                </div>
+                <span class="code-title">During the session</span>
+              </div>
+              <pre class="code-content"><code><span class="keyword">async for</span> <span class="variable">message</span> <span class="keyword">in</span> client.<span class="function">receive_response</span>():
+    <span class="keyword">if</span> <span class="function">isinstance</span>(<span class="variable">message</span>, <span class="variable">UserMessage</span>) <span class="keyword">and</span> <span class="variable">message</span>.uuid:
+        <span class="variable">checkpoint_id</span> = <span class="variable">message</span>.uuid  <span class="comment"># Save this!</span></code></pre>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="code-step">
+            <div class="code-step-header">
+              <span class="code-step-number">3</span>
+              <span class="code-step-title">Rewind When Needed</span>
+            </div>
+            <div class="code-panel">
+              <div class="code-header">
+                <div class="code-dots">
+                  <span class="dot red"></span>
+                  <span class="dot yellow"></span>
+                  <span class="dot green"></span>
+                </div>
+                <span class="code-title">The magic line</span>
+              </div>
+              <pre class="code-content"><code><span class="keyword">await</span> client.<span class="function">rewind_files</span>(<span class="variable">checkpoint_id</span>)
+<span class="comment"># That's it! All files restored instantly.</span></code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="code-summary">
+          <span class="code-summary-icon">💡</span>
+          <span>3 lines of config. 1 line to capture. 1 line to rewind. That's all it takes.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Next Button -->
+    <a href="page4.html" class="next-btn">
+      <span>Takeaways</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+  <script src="script.js"></script>
+  <script>
+    // Demo State
+    const originalConfig = {
+      products: [
+        { name: "2-Person Tent", price: 199.99, category: "camping", discount: 0 },
+        { name: "4-Person Family Tent", price: 349.99, category: "camping", discount: 0 },
+        { name: "Hiking Boots", price: 149.99, category: "footwear", discount: 0 },
+        { name: "Trail Running Shoes", price: 119.99, category: "footwear", discount: 0 },
+        { name: "50L Backpack", price: 89.99, category: "bags", discount: 0 },
+        { name: "Rain Jacket", price: 129.99, category: "apparel", discount: 0 }
+      ],
+      rules: [
+        { type: "Camping discount", value: "0%" },
+        { type: "Footwear discount", value: "0%" },
+        { type: "Free shipping", value: "Not active" }
+      ]
+    };
+
+    const saleConfig = {
+      products: [
+        { name: "2-Person Tent", price: 199.99, category: "camping", discount: 25 },
+        { name: "4-Person Family Tent", price: 349.99, category: "camping", discount: 25 },
+        { name: "Hiking Boots", price: 149.99, category: "footwear", discount: 15 },
+        { name: "Trail Running Shoes", price: 119.99, category: "footwear", discount: 15 },
+        { name: "50L Backpack", price: 89.99, category: "bags", discount: 0 },
+        { name: "Rain Jacket", price: 129.99, category: "apparel", discount: 0 }
+      ],
+      rules: [
+        { type: "Camping discount", value: "25%" },
+        { type: "Footwear discount", value: "15%" },
+        { type: "Free shipping", value: "$150+" }
+      ]
+    };
+
+    let currentConfig = JSON.parse(JSON.stringify(originalConfig));
+    let checkpointSaved = false;
+    let startTime = Date.now();
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      renderConfig(currentConfig);
+      highlightStep(1);
+    });
+
+    function renderConfig(config) {
+      const display = document.getElementById('configDisplay');
+
+      let html = '<div class="products-section">';
+      html += '<div class="section-title">Products</div>';
+
+      config.products.forEach(product => {
+        const salePrice = product.discount > 0
+          ? (product.price * (1 - product.discount / 100)).toFixed(2)
+          : null;
+
+        html += `
+          <div class="product-row ${product.discount > 0 ? 'discounted' : ''}">
+            <div class="product-info">
+              <span class="product-name">${product.name}</span>
+              <span class="product-category">${product.category}</span>
+            </div>
+            <div class="product-price">
+              ${product.discount > 0 ? `
+                <span class="old-price">$${product.price.toFixed(2)}</span>
+                <span class="new-price">$${salePrice}</span>
+                <span class="discount-tag">${product.discount}% OFF</span>
+              ` : `
+                <span class="regular-price">$${product.price.toFixed(2)}</span>
+              `}
+            </div>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+
+      html += '<div class="rules-section">';
+      html += '<div class="section-title">Active Rules</div>';
+
+      config.rules.forEach(rule => {
+        const isActive = rule.value !== "0%" && rule.value !== "Not active";
+        html += `
+          <div class="rule-row ${isActive ? 'active' : ''}">
+            <span class="rule-type">${rule.type}</span>
+            <span class="rule-value">${rule.value}</span>
+          </div>
+        `;
+      });
+
+      html += '</div>';
+
+      display.innerHTML = html;
+    }
+
+    function addTimelineEvent(text, type = 'info') {
+      const timeline = document.getElementById('timeline');
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+
+      const event = document.createElement('div');
+      event.className = `timeline-event ${type}`;
+      event.innerHTML = `
+        <span class="event-time">${elapsed}s</span>
+        <span class="event-dot"></span>
+        <span class="event-text">${text}</span>
+      `;
+
+      timeline.appendChild(event);
+      timeline.scrollTop = timeline.scrollHeight;
+    }
+
+    function highlightStep(step) {
+      document.querySelectorAll('.flow-step').forEach((el, i) => {
+        el.classList.toggle('active', i + 1 === step);
+      });
+    }
+
+    function applySale() {
+      const btn = document.getElementById('applyBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-icon">⏳</span> Applying...';
+
+      // Save checkpoint
+      checkpointSaved = true;
+      document.getElementById('checkpointValue').textContent = 'a1b2c3d4...';
+      document.getElementById('checkpointValue').classList.add('saved');
+      addTimelineEvent('Checkpoint saved: a1b2c3d4-e5f6-7890...', 'checkpoint');
+
+      highlightStep(2);
+
+      // Simulate Claude making changes
+      setTimeout(() => {
+        addTimelineEvent('Claude: Updating camping discount to 25%');
+      }, 500);
+
+      setTimeout(() => {
+        addTimelineEvent('Claude: Updating footwear discount to 15%');
+      }, 1000);
+
+      setTimeout(() => {
+        addTimelineEvent('Claude: Adding free shipping threshold');
+      }, 1500);
+
+      setTimeout(() => {
+        currentConfig = JSON.parse(JSON.stringify(saleConfig));
+        renderConfig(currentConfig);
+
+        document.getElementById('statusBadge').textContent = 'Modified';
+        document.getElementById('statusBadge').classList.add('modified');
+
+        btn.innerHTML = '<span class="btn-icon">✅</span> Sale Applied!';
+        document.getElementById('rewindBtn').disabled = false;
+
+        addTimelineEvent('All changes applied successfully', 'success');
+        highlightStep(3);
+      }, 2000);
+    }
+
+    function rewindChanges() {
+      const btn = document.getElementById('rewindBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="btn-icon">⏳</span> Rewinding...';
+
+      highlightStep(4);
+      addTimelineEvent('Initiating rewind to checkpoint a1b2c3d4...', 'rewind');
+
+      setTimeout(() => {
+        currentConfig = JSON.parse(JSON.stringify(originalConfig));
+        renderConfig(currentConfig);
+
+        document.getElementById('statusBadge').textContent = 'Restored';
+        document.getElementById('statusBadge').classList.remove('modified');
+        document.getElementById('statusBadge').classList.add('restored');
+
+        btn.innerHTML = '<span class="btn-icon">✅</span> Rewound!';
+
+        addTimelineEvent('Files restored to original state', 'success');
+
+        // Flash effect on config panel
+        document.querySelector('.config-panel').classList.add('flash');
+        setTimeout(() => {
+          document.querySelector('.config-panel').classList.remove('flash');
+        }, 500);
+      }, 1000);
+    }
+
+    function resetDemo() {
+      currentConfig = JSON.parse(JSON.stringify(originalConfig));
+      renderConfig(currentConfig);
+
+      checkpointSaved = false;
+      startTime = Date.now();
+
+      document.getElementById('statusBadge').textContent = 'Original';
+      document.getElementById('statusBadge').className = 'status-badge';
+
+      document.getElementById('checkpointValue').textContent = 'No checkpoint saved';
+      document.getElementById('checkpointValue').classList.remove('saved');
+
+      document.getElementById('applyBtn').disabled = false;
+      document.getElementById('applyBtn').innerHTML = '<span class="btn-icon">🤖</span> Apply Black Friday Sale';
+
+      document.getElementById('rewindBtn').disabled = true;
+      document.getElementById('rewindBtn').innerHTML = '<span class="btn-icon">↩️</span> Rewind to Checkpoint';
+
+      document.getElementById('timeline').innerHTML = `
+        <div class="timeline-event">
+          <span class="event-time">00:00</span>
+          <span class="event-dot"></span>
+          <span class="event-text">Demo reset — ready to start</span>
+        </div>
+      `;
+
+      highlightStep(1);
+    }
+  </script>
+</body>
+</html>

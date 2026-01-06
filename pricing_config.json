@@ -1,0 +1,71 @@
+{
+  "store_name": "Mountain Gear Co",
+  "currency": "USD",
+  "last_updated": "2024-10-15",
+  "products": [
+    {
+      "sku": "TENT-001",
+      "name": "2-Person Tent",
+      "base_price": 199.99,
+      "category": "camping"
+    },
+    {
+      "sku": "TENT-002",
+      "name": "4-Person Family Tent",
+      "base_price": 349.99,
+      "category": "camping"
+    },
+    {
+      "sku": "BOOT-042",
+      "name": "Hiking Boots",
+      "base_price": 149.99,
+      "category": "footwear"
+    },
+    {
+      "sku": "BOOT-043",
+      "name": "Trail Running Shoes",
+      "base_price": 119.99,
+      "category": "footwear"
+    },
+    {
+      "sku": "PACK-007",
+      "name": "50L Backpack",
+      "base_price": 89.99,
+      "category": "bags"
+    },
+    {
+      "sku": "JACK-015",
+      "name": "Rain Jacket",
+      "base_price": 129.99,
+      "category": "apparel"
+    }
+  ],
+  "discount_rules": [
+    {
+      "id": "rule-001",
+      "type": "category_discount",
+      "target": "camping",
+      "discount_percent": 0,
+      "active": true
+    },
+    {
+      "id": "rule-002",
+      "type": "category_discount",
+      "target": "footwear",
+      "discount_percent": 0,
+      "active": true
+    },
+    {
+      "id": "rule-003",
+      "type": "minimum_purchase",
+      "threshold_usd": 200,
+      "discount_percent": 5,
+      "active": true
+    }
+  ],
+  "shipping": {
+    "free_shipping_threshold": null,
+    "standard_rate": 9.99,
+    "express_rate": 19.99
+  }
+}
